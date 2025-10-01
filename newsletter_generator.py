@@ -244,11 +244,10 @@ class NewsletterGenerator:
         
         self.tiny_text = ParagraphStyle(
             name='TinyText',
-            fontSize=7,
+            fontSize=10,
             alignment=TA_LEFT,
             spaceAfter=2,
-            leading=9
-        )
+            leading=15        )
         
         self.article_text = ParagraphStyle(
             name='ArticleText',
