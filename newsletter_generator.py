@@ -259,9 +259,9 @@ class NewsletterGenerator:
         
         self.cal_event_style = ParagraphStyle(
             name='CalEvent',
-            fontSize=6,
+            fontSize=8,
             spaceAfter=0,
-            leading=6
+            leading=8
         )
         
         self.minutes_header = ParagraphStyle(
@@ -954,32 +954,34 @@ class NewsletterGenerator:
                     week.append(0)
             cal_grid.append(week)
         
-        # Calculate content density for better column widths
-        col_content_count = [0] * 7
+        # Determine which columns have events
+        col_has_events = [False] * 7
         for week in cal_grid:
             for col, day_num in enumerate(week):
                 if day_num > 0:
                     date_key = f"{year}-{month:02d}-{day_num:02d}"
                     if date_key in events:
-                        col_content_count[col] += len(events[date_key]) * 4
-        
-        # Dynamic column widths
+                        col_has_events[col] = True
+
+        # Calculate column widths
+        empty_col_width = 0.4*inch
+        total_width = 7.5*inch
+
+        # Count columns with events
+        cols_with_events = sum(col_has_events)
+        cols_without_events = 7 - cols_with_events
+
+        # Calculate remaining width for columns with events
+        remaining_width = total_width - (cols_without_events * empty_col_width)
+        width_per_event_col = remaining_width / cols_with_events if cols_with_events > 0 else total_width / 7
+
+        # Assign widths
         col_widths = []
-        min_width = 0.6*inch
-        max_width = 1.4*inch
-        
         for col in range(7):
-            if col_content_count[col] == 0:
-                col_widths.append(min_width)
-            elif col_content_count[col] > 8:
-                col_widths.append(max_width)
+            if col_has_events[col]:
+                col_widths.append(width_per_event_col)
             else:
-                ratio = col_content_count[col] / 8
-                col_widths.append(min_width + (max_width - min_width) * ratio)
-        
-        # Normalize to exactly 7.5 inches
-        total = sum(col_widths)
-        col_widths = [w * 7.5*inch / total for w in col_widths]
+                col_widths.append(empty_col_width)
         
         # Banner
         banner = Table([[f"NW Florida Mensa Event Schedule for {month_name} {year}"]], 
@@ -1015,19 +1017,21 @@ class NewsletterGenerator:
                     cell_lines = [f"<b>{day_num}</b>"]
                     
                     if date_key in events:
-                        for evt in events[date_key][:2]:  # Show 2 events
+                        for idx, evt in enumerate(events[date_key][:2]):  # Show 2 events
                             # Skip erroneous entries
                             if evt.get('title', '') in ['T', 'C']:
                                 continue
-                                
-                            cell_lines.append("")  # Blank line before event
+
+                            # Only add blank line before 2nd event (not before 1st)
+                            if idx > 0:
+                                cell_lines.append("")
                             
                             # Full event details
                             title = self.clean_text(evt.get('title', ''))
                             time = evt.get('time', '')
                             if time and title:
-                                cell_lines.append(f"{time} - {title}"[:30])
-                            
+                                cell_lines.append(f"{time} - {title}")
+
                             if evt.get('name'):
                                 name = self.clean_text(evt['name'])
                                 # Remove long parentheticals
@@ -1035,39 +1039,44 @@ class NewsletterGenerator:
                                     paren_content = name[name.find('(')+1:name.find(')')]
                                     if len(paren_content.split()) > 2:
                                         name = name[:name.find('(')].strip()
-                                cell_lines.append(name[:28])
-                            
+                                # If both URL and phone exist, append phone to name
+                                if evt.get('url') and evt.get('phone'):
+                                    name = f"{name}, {evt['phone']}"
+                                cell_lines.append(name)
+
                             if evt.get('location'):
                                 loc = self.clean_text(evt['location'])
                                 loc = loc.replace('Fort Walton Beach', 'FWB')
                                 loc = loc.replace('Street', 'St')
                                 loc = loc.replace('Parkway', 'Pkwy')
-                                cell_lines.append(loc[:28])
-                            
-                            # Include URL if present
+                                cell_lines.append(loc)
+
+                            # Include URL if present (do not truncate)
                             if evt.get('url'):
-                                url = evt['url'].replace('https://', '').replace('http://', '')
-                                if len(url) > 25:
-                                    url = url[:22] + '...'
-                                cell_lines.append(url)
+                                full_url = evt['url']
+                                display_url = full_url.replace('https://', '').replace('http://', '')
+                                # Format as blue, underlined hyperlink
+                                url_html = f'<font color="#0000FF"><u><link href="{full_url}">{display_url}</link></u></font>'
+                                cell_lines.append(url_html)
                             elif evt.get('phone'):
+                                # Only show phone on its own line if there's no URL
                                 cell_lines.append(evt['phone'])
                     
-                    # Create paragraph with all lines
-                    cell_text = '<br/>'.join(cell_lines[:10])
+                    # Create paragraph with all lines (no limit to show full events)
+                    cell_text = '<br/>'.join(cell_lines)
                     week_row.append(Paragraph(cell_text, self.cal_event_style))
             cal_data.append(week_row)
         
-        # Calendar table
-        cal_table = Table(cal_data, colWidths=col_widths, rowHeights=[1.2*inch]*len(cal_data))
+        # Calendar table with increased row height to fit 2 full events
+        cal_table = Table(cal_data, colWidths=col_widths, rowHeights=[1.27*inch]*len(cal_data))
         
-        # Style
+        # Style - negative top padding shifts content up
         styles = [
             ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
             ('LEFTPADDING', (0, 0), (-1, -1), 3),
             ('RIGHTPADDING', (0, 0), (-1, -1), 2),
-            ('TOPPADDING', (0, 0), (-1, -1), 2),
+            ('TOPPADDING', (0, 0), (-1, -1), 0),
         ]
         
         # Gray empty cells
@@ -1160,8 +1169,8 @@ class NewsletterGenerator:
             story.append(summary)
         
         story.append(PageBreak())
-        
-        # Calendar pages (should use 0.5" margins but kept at 1" for now)
+
+        # Calendar pages
         for month_info in self.config.get('calendar_months', []):
             cal_elements = self.create_calendar(
                 month_info['year'],
