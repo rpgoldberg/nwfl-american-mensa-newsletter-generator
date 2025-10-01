@@ -407,6 +407,9 @@ class EventParser:
             return events
 
         cheers_section = text[cheers_start:]
+        next_section = re.search(r'\n(In a change)', cheers_section)
+        if next_section:
+            cheers_section = cheers_section[:next_section.start()]
 
         time = self.extract_time(cheers_section)
         url = self.extract_url(cheers_section)
@@ -517,6 +520,30 @@ class EventParser:
 
         return text
 
+    def normalize_phones_in_text(self, text):
+        """Normalize all phone numbers in text to (###) ###-#### format"""
+        if not text:
+            return text
+
+        # Pattern to match various phone number formats
+        def standardize_phone(match):
+            phone = match.group(0)
+            # Extract just the digits
+            digits = re.sub(r'\D', '', phone)
+            # Only format if we have exactly 10 digits
+            if len(digits) == 10:
+                return f"({digits[:3]}) {digits[3:6]}-{digits[6:]}"
+            return phone  # Return original if not 10 digits
+
+        # Match various phone formats
+        text = re.sub(
+            r'\(?\d{3}\)?[-.\s/]?\d{3}[-.\s/]?\d{4}',
+            standardize_phone,
+            text
+        )
+
+        return text
+
     def extract_raw_sections(self, text):
         """Extract raw text for each event section"""
         sections = {}
@@ -544,8 +571,11 @@ class EventParser:
                         if pos > 0 and pos < end_pos:
                             end_pos = pos
 
-                # Normalize URLs in the section before storing
-                sections[key] = self.normalize_urls_in_text(section[:end_pos].strip())
+                # Normalize URLs and phones in the section before storing
+                section_text = section[:end_pos].strip()
+                section_text = self.normalize_urls_in_text(section_text)
+                section_text = self.normalize_phones_in_text(section_text)
+                sections[key] = section_text
 
         return sections
     

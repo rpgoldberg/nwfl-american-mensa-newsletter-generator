@@ -247,7 +247,7 @@ class NewsletterGenerator:
             fontSize=10,
             alignment=TA_LEFT,
             spaceAfter=2,
-            leading=15        )
+            leading=14        )
         
         self.article_text = ParagraphStyle(
             name='ArticleText',
@@ -881,18 +881,26 @@ class NewsletterGenerator:
         events = self.data.get('events', {})
         if not events:
             return []
-            
-        summary_lines = []
-        
+
+        # Create style with hanging indent for wrapped URLs
+        summary_style = ParagraphStyle(
+            'EventSummary',
+            parent=self.tiny_text,
+            leftIndent=1.04*inch,
+            firstLineIndent=-1.04*inch  # Negative to create hanging indent
+        )
+
+        paragraphs = []
+
         for date in sorted(events.keys()):
             date_obj = datetime.strptime(date, '%Y-%m-%d')
             date_str = date_obj.strftime('%b %-d')
-            
+
             for event in events[date]:
                 # Skip erroneous single-letter entries
                 if event.get('title', '') in ['T', 'C']:
                     continue
-                    
+
                 parts = [date_str, event.get('time', ''), event.get('title', '')]
                 if event.get('name'):
                     parts.append(self.clean_text(event['name']))
@@ -903,12 +911,12 @@ class NewsletterGenerator:
                     parts.append(event['phone'])
                 if event.get('url'):
                     parts.append(event['url'])
-                    
+
                 line = ', '.join(filter(None, parts))
-                summary_lines.append(line)
-        
-        summary_text = '<br/>'.join(summary_lines)
-        return self.create_box("Event Summary List", self.make_urls_blue(summary_text), 6.5*inch, self.tiny_text)
+                # Create a separate paragraph for each event line
+                paragraphs.append(Paragraph(self.make_urls_blue(line), summary_style))
+
+        return self.create_minutes_box("Event Summary List", paragraphs, 6.5*inch)
 
     def create_calendar(self, year, month):
         """Create calendar with better column widths and complete event display"""
