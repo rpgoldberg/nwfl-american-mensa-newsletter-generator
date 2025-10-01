@@ -498,10 +498,29 @@ class EventParser:
         
         return events
     
+    def normalize_urls_in_text(self, text):
+        """Normalize all URLs in text to use https://"""
+        if not text:
+            return text
+
+        # First, replace all http:// URLs with https://
+        text = re.sub(r'\bhttp://', 'https://', text)
+
+        # Add https:// to www. URLs not already part of a full URL
+        # Match www. that is NOT preceded by :// (to avoid matching https://www.)
+        text = re.sub(r'(?<!://)\b(www\.[^\s,;)]+)', r'https://\1', text)
+
+        # Add https:// to bare domain URLs (domain.com) NOT in email addresses or after www.
+        # Match domain.ext but NOT when preceded by @ (email), :// (URL), or www. (already handled)
+        # Negative lookbehind for @ and for www.
+        text = re.sub(r'(?<!@)(?<!www\.)(?<!://)\b([a-zA-Z0-9\-]+\.(com|org|net|edu)(?:/[^\s,;)]*)?)(?=[\s,;)\.]|$)', r'https://\1', text)
+
+        return text
+
     def extract_raw_sections(self, text):
         """Extract raw text for each event section"""
         sections = {}
-        
+
         # Define section markers
         markers = [
             ('wednesday_lunchers', 'Wednesday Lunchers', ['In addition to our Wednesday Lunches', 'Panama City Ms', 'Pensacola Ms', 'Our longest running', 'In a change', '\n\n\n', None]),
@@ -511,12 +530,12 @@ class EventParser:
             ('cheers', 'Our longest running', ['In a change', '\n\n\n', ]),
             ('excomm', 'In a change', ['\n\n\n', None])
         ]
-        
+
         for key, start_marker, end_markers in markers:
             if start_marker in text:
                 start = text.find(start_marker)
                 section = text[start:]
-                
+
                 # Find the end of section
                 end_pos = len(section)
                 for end_marker in end_markers:
@@ -524,9 +543,10 @@ class EventParser:
                         pos = section.find(end_marker)
                         if pos > 0 and pos < end_pos:
                             end_pos = pos
-                
-                sections[key] = section[:end_pos].strip()
-        
+
+                # Normalize URLs in the section before storing
+                sections[key] = self.normalize_urls_in_text(section[:end_pos].strip())
+
         return sections
     
     def parse_all(self, raw_text, year=None):

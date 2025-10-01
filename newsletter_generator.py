@@ -245,7 +245,7 @@ class NewsletterGenerator:
         self.tiny_text = ParagraphStyle(
             name='TinyText',
             fontSize=7,
-            alignment=TA_JUSTIFY,
+            alignment=TA_LEFT,
             spaceAfter=2,
             leading=9
         )
@@ -346,20 +346,14 @@ class NewsletterGenerator:
         if not text:
             return text
 
-        # Skip if text already has link/font tags (already formatted)
-        if '<link' in text or '<font color=' in text:
+        # Skip if text already has link/font tags (already formatted with blue links)
+        if '<link' in text or '<font color="#0000FF"' in text:
             return text
 
-        # URLs with protocol
-        def format_url_with_protocol(match):
-            url = match.group(1)
-            terminator = match.group(2)
-            formatted = f'<font color="#0000FF"><u><link href="{url}">{url}</link></u></font>{terminator}'
-            return formatted
-
+        # URLs with protocol - stop at whitespace, comma, semicolon, HTML tags, or period followed by space/end
         text = re.sub(
-            r'\b(https?://[^\s<>]+)([.,;:!?\s]|$)',
-            format_url_with_protocol,
+            r'\b(https?://[^\s<>,;]+)(\s*[,;]\s*|\.\s|\.$|<|\s+|$)',
+            lambda m: f'<font color="#0000FF"><u><link href="{m.group(1)}">{m.group(1)}</link></u></font>{m.group(2)}',
             text
         )
 
@@ -371,9 +365,10 @@ class NewsletterGenerator:
         )
 
         # www URLs without protocol (but not already part of http://www or https://www)
+        # Match www.domain but stop at whitespace, comma, semicolon, HTML tags, or period followed by space/end
         text = re.sub(
-            r'(?<!://)\b(www\.[^\s<>]+)([.,;:!?\s]|$)',
-            r'<font color="#0000FF"><u>\1</u></font>\2',
+            r'(?<!://)\b(www\.[^\s<>,;]+)(\s*[,;]\s*|\.\s|\.$|<|\s+|$)',
+            lambda m: f'<font color="#0000FF"><u>{m.group(1)}</u></font>{m.group(2)}',
             text
         )
 
@@ -565,8 +560,11 @@ class NewsletterGenerator:
         nu = self.static.get('newsletter_updates', {})
         if not nu:
             return []
-            
-        text = f"{nu.get('content', '')}<br/><br/>{nu.get('signature', '').replace(chr(10), '<br/>')}"
+
+        # Replace newlines with <br/> in both content and signature
+        content = nu.get('content', '').replace('\n', '<br/>')
+        signature = nu.get('signature', '').replace('\n', '<br/>')
+        text = f"{content}<br/><br/>{signature}"
         return self.create_box(nu.get('header', 'Newsletter Updates'), self.make_urls_blue(text), 6.5*inch, self.body_text_large)
 
     def create_static_boxes(self):
@@ -691,7 +689,7 @@ class NewsletterGenerator:
         
         # Across the Board October
         for article in self.data.get('articles', []):
-            if 'October column' in article.get('title', ''):
+            if '(October)' in article.get('title', ''):
                 content = self.clean_text(article['content'])
                 # Add double breaks at specific points
                 content = content.replace('limitless!\nDon', 'limitless!<br/><br/>Don')
@@ -700,14 +698,14 @@ class NewsletterGenerator:
                 content = content.replace('RC10@us.mensa.org\nMean', 'RC10@us.mensa.org<br/><br/>Mean')  # Replace specific email, not .org
                 content = content.replace('\n', '<br/>')
                 content = self.make_urls_blue(content)
-                story.append(self.create_box("Across the Board (RC10 October column)",
+                story.append(self.create_box(article.get('title',''),
                                            content, width, self.article_text))
                 break
         
         # Across the Board September with image
         story.append(PageBreak())
         for article in self.data.get('articles', []):
-            if 'September column' in article.get('title', ''):
+            if '(September)' in article.get('title', ''):
                 content = self.clean_text(article['content'])
                 lines = content.split('\n')
                 
@@ -728,18 +726,19 @@ class NewsletterGenerator:
                     if os.path.exists('./1759079949624_image.jpg'):
                         img = Image('./1759079949624_image.jpg', 
                                   width=1.5*inch, height=2.5*inch)
-                        content_table = Table([[img, remaining_para]], 
+                        content_table = Table([[img, remaining_para]],
                                             colWidths=[1.7*inch, 4.8*inch])
                         content_table.setStyle(TableStyle([
                             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                            ('RIGHTPADDING', (1, 0), (1, 0), 11),  # Text cell: add 2px right padding (6->8)
                         ]))
-                        story.append(self.create_box("Across the Board (RC10 September column)", 
+                        story.append(self.create_box(article.get('title',''), 
                                                    [first_para, content_table], width))
                     else:
-                        story.append(self.create_box("Across the Board (RC10 September column)", 
+                        story.append(self.create_box(article.get('title',''), 
                                                    [first_para, remaining_para], width))
                 else:
-                    story.append(self.create_box("Across the Board (RC10 September column)", 
+                    story.append(self.create_box(article.get('title',''), 
                                                [first_para], width))
                 break
         
@@ -764,9 +763,21 @@ class NewsletterGenerator:
         # Wednesday Lunchers
         if 'wednesday_lunchers' in sections:
             wl = sections['wednesday_lunchers']
-            text = self.clean_text(wl.get('content', '')).replace('\n', '<br/>')
-            story.append(self.create_box(wl.get('header', 'Wednesday Lunchers'), 
-                                        self.make_urls_blue(text), width, self.body_text_left))
+            text = self.clean_text(wl.get('content', ''))
+            # Add minimal spacing before each schedule line
+            lines = text.split('\n')
+            processed_lines = []
+            months = ['January', 'February', 'March', 'April', 'May', 'June',
+                     'July', 'August', 'September', 'October', 'November', 'December']
+            for i, line in enumerate(lines):
+                # Check if line starts with a month name
+                if i > 0 and any(line.strip().startswith(month) for month in months):
+                    # Add very small spacing using font size 1
+                    processed_lines.append('<font size="1">&nbsp;</font>')
+                processed_lines.append(line)
+            text = '<br/>'.join(processed_lines)
+            story.append(self.create_box(wl.get('header', 'Wednesday Lunchers'),
+                                        text, width, self.body_text_left))
         
         story.append(PageBreak())
         
