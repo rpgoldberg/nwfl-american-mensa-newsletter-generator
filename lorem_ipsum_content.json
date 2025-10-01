@@ -1,0 +1,303 @@
+{
+    "config": {
+        "volume": "29",
+        "issue": "5",
+        "month_year": "October and November 2025",
+        "organization": "Lorem Mensa",
+        "calendar_months": [
+            {
+                "year": 2025,
+                "month": 10
+            },
+            {
+                "year": 2025,
+                "month": 11
+            }
+        ]
+    },
+    "static_content": {
+        "page1": {
+            "box1": {
+                "title": "",
+                "line1": "Lorem Ipsum Dolor Sit Amet Local Group Purpose Statement",
+                "line2": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
+                "centered_first": true,
+                "all_bold": true
+            },
+            "box2": {
+                "title": "",
+                "line1": "THE LOREM IPSUM MENSA® LOCAL GROUP",
+                "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+                "centered_first": true
+            },
+            "box3": {
+                "title": "",
+                "content": "Lorem ipsum website: https://www.lorem-ipsum.org. Consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.\n\n**Lorem Social:** Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium."
+            },
+            "box4": {
+                "title": "",
+                "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Visit https://www.example-lorem.com sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Contact lorem@example.com ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Call 555-123-4567 ext. 5005 duis aute irure dolor.\n\nLorem ipsum back issues consectetur adipiscing elit.\n\nFor Lorem Youth information: https://www.example-lorem.com/learn/youth"
+            },
+            "box5": {
+                "title": "",
+                "content": "Lorem International is on the web: https://www.lorem-international.org"
+            },
+            "box6": {
+                "title": "",
+                "content": "Lorem ipsum copyright 2012 by Lorem Ipsum Mensa® Local Group, all rights reserved. Lorem® and the Lorem® logo (as depicted for example in U.S. TM Reg. No. 1,234,567) are registered in the U.S. Patent and Trademark Office by Lorem Mensa®, Ltd., and are registered in other countries by Lorem® International Limited and/or affiliated national Lorem® organizations. Lorem® does not hold any opinions, or have, or express, any political or religious views."
+            }
+        },
+        "static_boxes": {
+            "box1": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. All material in this issue not copyrighted by others may be freely reprinted. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+            "box2": "Editorial Policy Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+            "box3": "Contributor agreement lorem ipsum.\n\nDolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. The recommended format is \"By [Lorem Name], reproduced from the Lorem Ipsum of Lorem Local Group\". Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+        },
+        "treasurer_report": {
+            "header": "Treasurer's Report by Lorem Ipsum, Treasurer",
+            "date_range": "Treasurer's Report—September 2025 (1 Jul – 31 Aug)",
+            "beginning_balance": "12,345.67",
+            "deposits": "456.78",
+            "checks_deductions": "(234.56)",
+            "ending_balance": "12,567.89"
+        },
+        "membership_stats": {
+            "header": "Local Group Membership Statistics",
+            "date_range": "6/1—7/31/2025",
+            "entered": 5,
+            "exited": 2,
+            "total": 256
+        },
+        "newsletter_updates": {
+            "header": "Newsletter Updates",
+            "content": "Lorem ipsum newsletter is now available in full color online at lorem-ipsum.org. Submit articles and announcements to the editor at editor@lorem-example.com",
+            "signature": "Thank you,\n\nLorem Ipsum\nPublications Officer & Editor"
+        },
+        "event_sections": {
+            "regular_events": {
+                "header": "Regular Events",
+                "content": "Lorem Mensa Event Schedule for October and November 2025, including Lorem lunches, Lorem Hours, and other regular events."
+            },
+            "wednesday_lunchers": {
+                "header": "Wednesday Lunchers",
+                "content": "Lorem Lunchers meet to eat at 11:30am, though you are welcome to arrive earlier or later. Lorem ipsum dolor sit amet. Please email lorem.ipsum@example.com for more information.\n\nOctober 1: Lorem Restaurant, 123 Lorem Street, Lorem City, 555-111-2222\nOctober 8: Ipsum Cafe, 456 Dolor Avenue, Lorem City, lorem-restaurant.com\nOctober 15: Amet Bistro, 789 Consectetur Blvd, Lorem City, (555) 333-4444\nOctober 22: Elit Eatery, 321 Adipiscing Road, Lorem City, (555) 555-6666\nOctober 29: Lorem Smokehouse, 654 Tempor Parkway, Lorem City\nNovember 5: Ipsum Bakery, 987 Incididunt Street, Lorem City\nNovember 12: Dolor Mexican, 147 Labore Avenue, Lorem City, (555) 777-8888\nNovember 19: Lorem Pub, 258 Magna Way, http://www.lorem-pub.com\nNovember 26: No lunch meeting this week. Happy Lorem Day!"
+            },
+            "happy_hour": {
+                "header": "Happy Hour",
+                "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Happy Hour once a month on the Second Friday, starting around 5pm.\n\nOctober 10: Lorem Landing (downstairs), 369 Ipsum Parkway in Lorem Valley.\nNovember 14: Ipsum Bar, 741 Lorem Highway in Dolor City."
+            },
+            "panama_city": {
+                "header": "Lorem City Events",
+                "content": "Lorem City members meet the First Saturday of the month for lunch at Lorem's Eatery, 852 Lorem Street, Lorem City, https://lorem-eatery.com/locations.\n\nOctober 4 and November 1."
+            },
+            "pensacola": {
+                "header": "Ipsum Events",
+                "content": "Ipsum members meet the Third Wednesday of the month at 5:30pm, at the Lorem Bar inside Lorem World, 963 Ipsum Boulevard, Dolor City, https://www.lorem-bar.com.\n\nFMI this event: Lorem \"Lor\" Ipsum (lorem@example.edu) and/or Ipsum Dolor (ipsum@example.com).\n\nOctober 15 and November 19."
+            },
+            "cheers": {
+                "header": "Lorem!",
+                "content": "Lorem ipsum longest running monthly event: Last Friday at Lorem. Lorem Pub location details. Lorem ipsum dolor sit amet, consectetur adipiscing elit. 159 Lorem Parkway, Dolor City, www.lorem-pub.com/.\n\nOctober 31 and November 28."
+            },
+            "excomm": {
+                "header": "ExComm",
+                "content": "The ExComm will meet on Saturday November 15 at 11:30, at Lorem's Restaurant, 753 Lorem Strip Parkway. Lorem ipsum dolor sit amet (excellent Lorem food and drink) consectetur adipiscing elit!"
+            }
+        },
+        "weem": {
+            "header": "Lorem 2025 - Lorem Area Mensa",
+            "hosted": "Hosted by Lorem Area Mensa",
+            "location": "Lorem Chicago Hotel",
+            "address": "951 N. Lorem Street, Lorem City, IL 60090",
+            "tagline": "Join us for four days of lorem ipsum\ndolor sit amet fun!",
+            "bullets": [
+                "Lorem ipsum dolor sit amet consectetur adipiscing elit!",
+                "Sed do eiusmod tempor incididunt ut labore!",
+                "24-hour lorem ipsum room!",
+                "Lots of scheduled tournaments, including lorem ipsum, dolor trivia, and nightly Lorem!",
+                "Lorem-tastic costumes in Friday night's costume parade!",
+                "Extend your lorem during Saturday night's Ipsum Drinking AND Lorem Experience!"
+            ],
+            "price": "Only $140/person if you register by October 17th!",
+            "info": "Day rates available. Scan the QR code or visit https://lorem.mensa.org/lorem/register.php"
+        }
+    },
+    "officers": {
+        "President": "Lorem Ipsum",
+        "Vice President": "Dolor Sit",
+        "Treasurer": "Amet Consectetur",
+        "Membership Officer": "Vacant",
+        "Member at Large": "Adipiscing Elit",
+        "Publications Officer": "Sed Tempor",
+        "Editor": "Incididunt Labore",
+        "Webmaster": "Magna Aliqua",
+        "Past President": "Enim Minim"
+    },
+    "minutes": "Lorem ExComm Meeting September 20, 2025\nLorem Restaurant in Lorem City, 11:30AM\n\nMeeting Convened at 11:50\n\nI. Lorem ipsum dolor sit amet.\nA. All officers present: Lorem Ipsum, President; Dolor Sit; Amet Consectetur, VP; Adipiscing\nElit, Treasurer; Sed Tempor, Publications Officer; Incididunt Labore, Member at Large;\nMagna Aliqua; Enim Minim; Veniam Quis; Nostrud Exercitation;\n(quorum established)\nII. Lorem Reports:\nA. President – lorem ipsum dolor sit amet consectetur\nB. Vice President – None\nC. Treasurer's Report: 1-July – 31 August 2025\nBeginning Balance: $12,345.67\nDeposits: $456.78\nChecks & Deductions: ($234.56)\nEnding Balance: $12,567.89\nD. Member at Large – Lorem ipsum dolor\nE. Publications Officer – lorem website consectetur adipiscing\nIII. Old Business:\nA. Lorem ipsum dolor sit amet, consectetur adipiscing elit\nB. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua\n(meeting paused 11:58 - 12:05)\nIV. New Business:\nA. Lorem website: Ut enim ad minim veniam, quis nostrud exercitation\nullamco laboris nisi ut aliquip ex ea commodo consequat\n(break 12:18 - 12:45)\nB. Lorem Party discussion – duis aute irure dolor in reprehenderit\nC. Time, place, and date of the next ExComm meeting in November: lorem ipsum\ndolor sit amet? Scheduled for 15 November, Lorem City, business site TBD\n(meeting adjourned 13:08)",
+    "articles": [
+        {
+            "title": "President's Report",
+            "content": "September 19, 2025\nLorem President's Report:\nLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.\nDuis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\nSed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.\nNemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.\n\nRespectfully submitted,\nLorem Ipsum, President"
+        },
+        {
+            "title": "Across the Board (RC10 October column)",
+            "content": "Lorem ipsum dolor sit amet! Consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam? Quis nostrud exercitation ullamco laboris, anyone?\nThe key is lorem ipsum – when you dolor sit amet consectetur adipiscing elit – you've provided another opportunity for deeper lorem. Plan a games night or an outdoor activity now that lorem ipsum (for some of us!) is on the way. A visit to a museum's special exhibits or a speaker on local history are other possibilities. Your imagination and that of your local members is limitless!\nDon't forget to lorem in the upcoming ipsum election in early November, if there is more than one candidate for the office. As of this writing I see only one qualifying petition for Region 10.\nHere's the timeline, which you can find at\nhttps://www.lorem-mensa.org/lead/lorem/election/lorem-2025-special-election/\nMeanwhile as interim Lorem Coordinator, I'm here to offer help and answers where needed. Contact me at lorem10@example.org."
+        },
+        {
+            "title": "Across the Board (RC10 September column)",
+            "content": "Lorem ipsum dolor sit amet! The consectetur that struck a hold on the adipiscing of eight new elit last spring, including one for Region 10, has been settled. Now we can go ahead and vote for willing lorem volunteers to carry on the work of the AMC (Lorem Mensa Committee). Here's the timeline, which you can find at\nhttps://www.lorem.org/lead/amc/election/amc-2025-\nspecial-election/\nIn that area of the website, you can also find candidate\npetitions, which I encourage you to sign. There's just\none petition currently, but more petitions may appear\nbefore October 12. Sign all!\nIf you follow the Region 10 community in\nLoremConnect (I encourage you to do so!), you'll note\nthat there's been mention of a regional Zoom meeting,\nlike a town hall, so that members can hear from and ask\nquestions of the Lorem candidates. Sounds like a great\nopportunity to meet the candidates and hear their ideas.\nMeanwhile as interim Regional Coordinator, I'm here to\noffer help and answers where needed. Contact me at\nlorem10@example.org."
+        }
+    ],
+    "events": {
+        "2025-10-01": [
+            {
+                "time": "11:30am",
+                "title": "Lorem Lunchers",
+                "name": "Lorem Cuisine",
+                "location": "123 Lorem Street, Lorem City",
+                "phone": "555-111-2222"
+            }
+        ],
+        "2025-10-04": [
+            {
+                "time": "11:30am",
+                "title": "Lorem City Lunch",
+                "name": "Lorem's Eatery",
+                "location": "456 Ipsum Avenue, Lorem City",
+                "url": "lorem-eatery.com"
+            }
+        ],
+        "2025-10-08": [
+            {
+                "time": "11:30am",
+                "title": "Lorem Lunchers",
+                "name": "Ipsum Cuisine",
+                "location": "789 Dolor Street, Lorem City",
+                "url": "ipsum-cuisine.com"
+            }
+        ],
+        "2025-10-10": [
+            {
+                "time": "5:00pm",
+                "title": "Happy Hour",
+                "name": "Lorem Landing",
+                "location": "321 Amet Avenue in Lorem Valley"
+            }
+        ],
+        "2025-10-15": [
+            {
+                "time": "11:30am",
+                "title": "Lorem Lunchers",
+                "name": "Dolor Café",
+                "location": "654 Consectetur Boulevard, Lorem City",
+                "phone": "(555) 333-4444"
+            },
+            {
+                "time": "5:30pm",
+                "title": "Ipsum Group",
+                "name": "Lorem Bar inside Lorem World",
+                "location": "987 Adipiscing Road, Lorem City",
+                "url": "lorem-bar.com"
+            }
+        ],
+        "2025-10-22": [
+            {
+                "time": "11:30am",
+                "title": "Lorem Lunchers",
+                "name": "Elit Restaurant",
+                "location": "147 Sed Road, Lorem City",
+                "phone": "(555) 555-6666"
+            }
+        ],
+        "2025-10-29": [
+            {
+                "time": "11:30am",
+                "title": "Lorem Lunchers",
+                "name": "Lorem's Smokehouse",
+                "location": "258 Tempor Parkway, Lorem Town"
+            }
+        ],
+        "2025-10-31": [
+            {
+                "time": "11:30am",
+                "title": "Lorem Pub",
+                "name": "Lorem Pub Location",
+                "location": "369 Incididunt Parkway, Lorem City",
+                "url": "lorem-pub.com"
+            }
+        ],
+        "2025-11-01": [
+            {
+                "time": "11:30am",
+                "title": "Lorem City Lunch",
+                "name": "Lorem's Eatery",
+                "location": "456 Ipsum Avenue, Lorem City",
+                "url": "lorem-eatery.com"
+            }
+        ],
+        "2025-11-05": [
+            {
+                "time": "11:30am",
+                "title": "Lorem Lunchers",
+                "name": "Ipsum French Bakery",
+                "location": "741 Labore Street, Lorem City"
+            }
+        ],
+        "2025-11-12": [
+            {
+                "time": "11:30am",
+                "title": "Lorem Lunchers",
+                "name": "Dolor Mexican",
+                "location": "852 Magna Avenue, Lorem City",
+                "phone": "(555) 777-8888"
+            }
+        ],
+        "2025-11-14": [
+            {
+                "time": "5:00pm",
+                "title": "Happy Hour",
+                "name": "Ipsum Bar",
+                "location": "963 Aliqua Road in Lorem Harbor"
+            }
+        ],
+        "2025-11-15": [
+            {
+                "time": "11:30am",
+                "title": "ExComm Meeting",
+                "name": "Lorem's Restaurant",
+                "location": "159 Enim Strip Parkway Lorem City"
+            }
+        ],
+        "2025-11-19": [
+            {
+                "time": "11:30am",
+                "title": "Lorem Lunchers",
+                "name": "Ipsum Pub",
+                "location": "357 Minim Strip Parkway Lorem City",
+                "url": "http://www.ipsum-pub.com"
+            },
+            {
+                "time": "5:30pm",
+                "title": "Ipsum Group",
+                "name": "Lorem Bar inside Lorem World",
+                "location": "987 Adipiscing Road, Lorem City",
+                "url": "lorem-bar.com"
+            }
+        ],
+        "2025-11-26": [
+            {
+                "time": "11:30am",
+                "title": "Lorem Lunchers",
+                "name": "No lunch meeting this week. Happy Lorem Day!",
+                "location": ""
+            }
+        ],
+        "2025-11-28": [
+            {
+                "time": "11:30am",
+                "title": "Lorem Pub",
+                "name": "Lorem Pub Location",
+                "location": "369 Incididunt Parkway, Lorem City",
+                "url": "lorem-pub.com"
+            }
+        ]
+    }
+}

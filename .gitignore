@@ -1,3 +1,29 @@
+# Real data - never commit
+pensa_mensa_content_enhanced.json
+pensa_mensa_content_updated.json
+pensa_mensa_content.json
+real_event_text_raw.md
+
+# agent configs
+copilot-instructions.md
+CLAUDE.md
+
+# misc
+.github
+test_output.txt
+
+# Images
+*.jpg
+*.jpg:Zone*
+*.png
+*.png:Zone*
+*.gif
+*.gif:Zone*
+
+# Generated files
+*.pdf
+*.log
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
