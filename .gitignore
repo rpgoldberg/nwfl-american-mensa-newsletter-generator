@@ -23,6 +23,7 @@ test_output.txt
 # Generated files
 *.pdf
 *.log
+!lorem_ipsum_newsletter.pdf
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
