@@ -597,7 +597,7 @@ class NewsletterGenerator:
         in_body = False
 
         for line in lines:
-            if 'Meeting Convened' in line or 'meeting convened' in line.lower():
+            if 'Meeting Convened' in line or 'meeting convened' in line.lower() or 'Meeting Called to Order' in line or 'meeting called to order' in line.lower():
                 in_body = True
 
             if not in_body:
@@ -620,7 +620,7 @@ class NewsletterGenerator:
             # Check if this is a special line that should be centered and italicized
             line_lower = line.strip().lower()
             is_special_line = any(keyword in line_lower for keyword in [
-                'meeting convened', 'quorum established', 'meeting paused',
+                'meeting convened', 'meeting called to order', 'quorum established', 'meeting paused',
                 'break', 'meeting adjourned'
             ])
 
@@ -685,61 +685,21 @@ class NewsletterGenerator:
         """Create RC10 columns with proper paragraph spacing"""
         story = []
         width = 6.5*inch
-        
-        # Across the Board October
-        for article in self.data.get('articles', []):
-            if '(October)' in article.get('title', ''):
-                content = self.clean_text(article['content'])
-                # Add double breaks at specific points
-                content = content.replace('limitless!\nDon', 'limitless!<br/><br/>Don')
-                content = content.replace('Region 10.\nHere', 'Region 10.<br/><br/>Here')
-                content = content.replace('anyone?\n', 'anyone?<br/><br/>')
-                content = content.replace('RC10@us.mensa.org\nMean', 'RC10@us.mensa.org<br/><br/>Mean')  # Replace specific email, not .org
-                content = content.replace('\n', '<br/>')
-                content = self.make_urls_blue(content)
-                story.append(self.create_box(article.get('title',''),
-                                           content, width, self.article_text))
-                break
-        
-        # Across the Board September with image
-        story.append(PageBreak())
-        for article in self.data.get('articles', []):
-            if '(September)' in article.get('title', ''):
-                content = self.clean_text(article['content'])
-                lines = content.split('\n')
-                
-                # First 3 lines full width
-                first_lines = '<br/>'.join(lines[:3]) if len(lines) >= 3 else '<br/>'.join(lines)
-                first_para = Paragraph(self.make_urls_blue(first_lines), self.article_text)
-                
-                # Rest with image
-                if len(lines) > 3:
-                    remaining_text = '<br/>'.join(lines[3:])
-                    # Add double spacing
-                    remaining_text = remaining_text.replace('anyone?', 'anyone?<br/><br/>')
-                    remaining_text = remaining_text.replace('limitless!', 'limitless!<br/><br/>')
-                    remaining_text = remaining_text.replace('Region 10.', 'Region 10.<br/><br/>')
-                    remaining_text = remaining_text.replace('RC10@us.mensa.org', 'RC10@us.mensa.org<br/><br/>')  # Replace specific email, not .org
-                    remaining_para = Paragraph(self.make_urls_blue(remaining_text), self.article_text)
-                    
-                    if os.path.exists('./1759079949624_image.jpg'):
-                        img = Image('./1759079949624_image.jpg', 
-                                  width=1.5*inch, height=2.5*inch)
-                        content_table = Table([[img, remaining_para]],
-                                            colWidths=[1.7*inch, 4.8*inch])
-                        content_table.setStyle(TableStyle([
-                            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-                            ('RIGHTPADDING', (1, 0), (1, 0), 11),  # Text cell: add 2px right padding (6->8)
-                        ]))
-                        story.append(self.create_box(article.get('title',''), 
-                                                   [first_para, content_table], width))
-                    else:
-                        story.append(self.create_box(article.get('title',''), 
-                                                   [first_para, remaining_para], width))
-                else:
-                    story.append(self.create_box(article.get('title',''), 
-                                               [first_para], width))
-                break
+
+        # Find all RC/RVC column articles
+        rc_articles = [a for a in self.data.get('articles', []) if 'Across the Board' in a.get('title', '') or 'From the RVC' in a.get('title', '')]
+
+        for i, article in enumerate(rc_articles):
+            if i > 0:
+                story.append(PageBreak())
+
+            content = self.clean_text(article['content'])
+            # Add double breaks at paragraph boundaries
+            content = content.replace('\n\n', '<br/><br/>')
+            content = content.replace('\n', '<br/>')
+            content = self.make_urls_blue(content)
+            story.append(self.create_box(article.get('title',''),
+                                       content, width, self.article_text))
         
         return story
 
