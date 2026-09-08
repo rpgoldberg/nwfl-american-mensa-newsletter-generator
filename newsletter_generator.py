@@ -20,25 +20,50 @@ from reportlab.pdfgen import canvas
 import re
 
 class PageNumCanvas(canvas.Canvas):
-    """Canvas with centered page numbers"""
+    """Canvas with centered page numbers and header"""
     def __init__(self, *args, **kwargs):
+        self._header_text = kwargs.pop('header_text', '')
+        self._suppress_last = kwargs.pop('suppress_last_page', False)
+        self._draft = kwargs.pop('draft_watermark', False)
         canvas.Canvas.__init__(self, *args, **kwargs)
         self.pages = []
-        
+
     def showPage(self):
         self.pages.append(dict(self.__dict__))
         self._startPage()
-        
+
     def save(self):
+        total = len(self.pages)
         for page in self.pages:
             self.__dict__.update(page)
-            self.draw_page_number()
+            # Skip header + page number on the last page when it is a mailing panel
+            if not (self._suppress_last and self._pageNumber == total):
+                self.draw_page_number()
+                self.draw_page_header()
+            if self._draft:
+                self.draw_watermark()
             canvas.Canvas.showPage(self)
         canvas.Canvas.save(self)
-        
+
+    def draw_watermark(self):
+        self.saveState()
+        self.setFont("Helvetica-Bold", 140)
+        # Alpha baked into the color so setFillColor doesn't reset it
+        self.setFillColor(colors.Color(1, 0, 0, alpha=0.16))
+        self.translate(letter[0] / 2, letter[1] / 2)
+        self.rotate(-45)  # top-left to bottom-right
+        self.drawCentredString(0, -48, "DRAFT")
+        self.restoreState()
+
     def draw_page_number(self):
         self.setFont("Helvetica", 9)
         self.drawCentredString(letter[0] / 2, 1*inch, str(self._pageNumber))
+
+    def draw_page_header(self):
+        if self._pageNumber > 1 and self._header_text:
+            self.setFont("Helvetica", 8)
+            self.drawCentredString(letter[0] / 2, letter[1] - 0.75*inch,
+                                   self._header_text)
 
 class ContinuableBox(Flowable):
     """A box that can split across pages with continuation header"""
@@ -150,6 +175,60 @@ class ContinuableBox(Flowable):
                     elem.drawOn(c, 5 + x_offset, y_pos - h)
                     y_pos -= h + 3
 
+class UpsideDownText(Flowable):
+    """Text rendered upside-down (rotated 180 degrees)"""
+    def __init__(self, text, style, maxWidth=4.3*inch):
+        Flowable.__init__(self)
+        self.para = Paragraph(text, style)
+        self.maxWidth = maxWidth
+
+    def wrap(self, availWidth, availHeight):
+        self.pw, self.ph = self.para.wrap(self.maxWidth, availHeight)
+        return self.pw, self.ph
+
+    def draw(self):
+        c = self.canv
+        c.saveState()
+        c.translate(self.pw, self.ph)
+        c.rotate(180)
+        self.para.drawOn(c, 0, 0)
+        c.restoreState()
+
+class MailingPanel(Flowable):
+    """Back-page self-mailer panel: return address at the upper-left, a clear
+    3in x 1.5in meter zone kept blank at the upper-right, a prominent red
+    attention line in the middle, and open space below for the recipient
+    address the mailer applies."""
+    def __init__(self, return_lines, red_lines, width=6.5*inch, height=8.0*inch):
+        Flowable.__init__(self)
+        self.return_lines = [l for l in (return_lines or []) if l.strip()]
+        self.red_lines = red_lines or []
+        self.width = width
+        self.height = height
+
+    def wrap(self, availWidth, availHeight):
+        return self.width, self.height
+
+    def draw(self):
+        c = self.canv
+        w, h = self.width, self.height
+        # Return address, upper-left
+        c.setFillColor(colors.black)
+        c.setFont("Helvetica", 10)
+        y = h - 11
+        for line in self.return_lines:
+            c.drawString(0, y, line)
+            y -= 13
+        # (Upper-right 3in x 1.5in intentionally left blank for the postal meter)
+        # Red attention line, centered, below the meter band
+        c.setFillColor(colors.red)
+        c.setFont("Helvetica-Bold", 18)
+        ry = h - 2.6*inch
+        for line in self.red_lines:
+            c.drawCentredString(w / 2, ry, line)
+            ry -= 24
+        c.setFillColor(colors.black)
+
 class NewsletterHeader(Flowable):
     """Header with 300% scaled logo and dynamic text"""
     def __init__(self, config):
@@ -190,6 +269,12 @@ class NewsletterHeader(Flowable):
         c.setFont("Helvetica", 10)
         c.drawRightString(self.width - 0.125*inch, 0.95*inch,
                          f"Volume {self.config['volume']}, Issue {self.config['issue']}")
+
+        revised = self.config.get('revised')
+        if revised:
+            note = revised if isinstance(revised, str) else 'Revised'
+            c.setFont("Helvetica-Oblique", 9)
+            c.drawRightString(self.width - 0.125*inch, 0.78*inch, note)
 
 class NewsletterGenerator:
     def __init__(self, data):
@@ -481,7 +566,15 @@ class NewsletterGenerator:
         box6 = page1.get('box6', {})
         if box6:
             story.append(self.create_box(None, self.clean_text(box6.get('content', '')), width, self.small_body))
-        
+
+        # Election cover banner (red) at the bottom of page 1
+        election = self.config.get('election') or self.data.get('election', {})
+        if election.get('cover_banner'):
+            story.append(Spacer(1, 0.1*inch + 16))  # ~one line lower
+            banner_style = ParagraphStyle('CoverBanner', parent=self.centered_bold,
+                                          fontSize=13, leading=16, textColor=colors.red)
+            story.append(Paragraph(f"<b>{election['cover_banner']}</b>", banner_style))
+
         return story
 
     def create_treasurer_report(self):
@@ -548,10 +641,16 @@ class NewsletterGenerator:
         if not ms:
             return []
             
+        e, x, t = ms.get('entered', 0), ms.get('exited', 0), ms.get('total', 0)
+        em = 'member' if e == 1 else 'members'
+        xm = 'member' if x == 1 else 'members'
+        tm = 'member' if t == 1 else 'members'
         html = f"""<i>Local group membership changes from {ms.get('date_range', '')}:</i><br/><br/>
-{ms.get('entered', 0)} members entered our local group.<br/>
-{ms.get('exited', 0)} members exited our local group.<br/><br/>
-{ms.get('total', 0)} local group members in total."""
+{e} {em} entered our local group.<br/>
+{x} {xm} exited our local group.<br/><br/>
+{t} local group {tm} in total."""
+        if ms.get('note'):
+            html += f"<br/><br/><i>{self.clean_text(ms['note'])}</i>"
         return self.create_box(ms.get('header', 'Membership Statistics'), html, 6.5*inch, self.body_text_large)
 
     def create_newsletter_updates(self):
@@ -611,7 +710,8 @@ class NewsletterGenerator:
             content_elements.append(Paragraph(header_text, self.minutes_header))
             content_elements.append(Spacer(1, 0.1*inch))
 
-        # Process body with indentation
+        # Process body with indentation, tracking current level for continuation lines
+        current_indent = 0
         for line in body_lines:
             if not line.strip():
                 content_elements.append(Spacer(1, 0.05*inch))
@@ -632,15 +732,21 @@ class NewsletterGenerator:
                 content_elements.append(Paragraph(styled_text, style))
             else:
                 # Determine indentation level for regular lines
-                indent = 0
-                if line.strip().startswith('A.') or line.strip().startswith('B.') or \
-                   line.strip().startswith('C.') or line.strip().startswith('D.') or \
-                   line.strip().startswith('E.'):
-                    indent = 20
-                elif line.strip()[0:3] in ['I. ', 'II.', 'III', 'IV.', 'V. ']:
-                    indent = 0
-                elif not line.strip()[0].isdigit() and not line.strip().startswith('('):
-                    indent = 40
+                stripped = line.strip()
+                is_continuation = True
+                if stripped[0:3] in ['I. ', 'II.', 'III', 'IV.', 'V. ']:
+                    current_indent = 0
+                    is_continuation = False
+                elif stripped[:2] in ['A.', 'B.', 'C.', 'D.', 'E.', 'F.', 'G.', 'H.']:
+                    current_indent = 20
+                    is_continuation = False
+                elif stripped.startswith(('Beginning Balance', 'Deposits', 'Checks', 'Ending Balance')):
+                    # Treasurer sub-items get extra indent under their letter item
+                    current_indent = 40
+                    is_continuation = False
+
+                # Continuation lines get parent indent + 10
+                indent = current_indent + 10 if is_continuation else current_indent
 
                 # Create paragraph with indentation
                 style = ParagraphStyle('Indent', parent=self.minutes_body, leftIndent=indent)
@@ -649,11 +755,13 @@ class NewsletterGenerator:
         return content_elements
 
     def create_president_report(self):
-        """Create President's Report"""
+        """Create the LocSec/President column (matches a 'President' or 'LocSec' title)"""
         for article in self.data.get('articles', []):
-            if 'President' in article.get('title', ''):
+            title = article.get('title', '')
+            if 'President' in title or 'LocSec' in title:
                 content = self.clean_text(article['content']).replace('\n', '<br/>')
-                return self.create_box("President's Report", content, 6.5*inch, self.body_text_large)
+                return self.create_box(title or "President's Report", content,
+                                       6.5*inch, self.body_text_large)
         return []
 
     def create_officers_list(self):
@@ -703,6 +811,144 @@ class NewsletterGenerator:
         
         return story
 
+    def build_article_box(self, article, width=6.3*inch):
+        """Build one article as a splittable box (optional image, optional small font)"""
+        content = self.clean_text(article['content'])
+        elements = []
+
+        # Add image if specified
+        img_path = article.get('image', '')
+        if img_path and os.path.exists(img_path):
+            img = Image(img_path, width=4.0*inch, height=4.0*inch,
+                        kind='proportional')
+            # Wrap in table for centering within ContinuableBox
+            img_table = Table([[img]], colWidths=[width - 10])
+            img_table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                ('TOPPADDING', (0, 0), (-1, -1), 0),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+            ]))
+            elements.append(img_table)
+            elements.append(Spacer(1, 0.1*inch))
+
+        # Allow a compact style for long reference items (e.g., bylaws) to fit one page
+        art_style = self.article_text
+        if article.get('small_font'):
+            art_style = ParagraphStyle('ArticleSmall', parent=self.article_text,
+                                       fontSize=9.5, leading=12, spaceAfter=5)
+
+        # Split on double newlines into separate paragraphs for better page splitting
+        for para in content.split('\n\n'):
+            para_html = para.replace('\n', '<br/>')
+            para_html = self.make_urls_blue(para_html)
+            elements.append(Paragraph(para_html, art_style))
+
+        return ContinuableBox(article.get('title', ''), elements, width)
+
+    def create_general_articles(self):
+        """Create general articles (non-President, non-RC, non-end-matter)"""
+        story = []
+        width = 6.3*inch
+        skip_types = ['President', 'LocSec', 'Across the Board', 'From the RVC']
+
+        for article in self.data.get('articles', []):
+            title = article.get('title', '')
+            if any(skip in title for skip in skip_types):
+                continue
+            if article.get('end_matter'):
+                continue  # rendered with the end matter (e.g., beside the ballot)
+            story.append(self.build_article_box(article, width))
+
+        return story
+
+    def create_ballot(self):
+        """Render the official election ballot as a selectable table"""
+        b = self.data.get('ballot') or {}
+        if not b:
+            return []
+        width = 6.5*inch
+        elements = []
+
+        for line in b.get('subtitle', []):
+            elements.append(Paragraph(f"<para align='center'><b>{line}</b></para>",
+                                      self.centered_bold))
+        if b.get('subtitle'):
+            elements.append(Spacer(1, 0.12*inch))
+
+        if b.get('instructions'):
+            elements.append(Paragraph(self.clean_text(b['instructions']),
+                                      self.body_text_large))
+            elements.append(Spacer(1, 0.14*inch))
+
+        rows = [['Position', 'Name', 'X to select']]
+        for r in b.get('rows', []):
+            rows.append([r.get('position', ''), r.get('name', ''), ''])
+
+        tbl = Table(rows, colWidths=[2.3*inch, 2.9*inch, 1.1*inch],
+                    rowHeights=[0.32*inch] + [0.40*inch] * (len(rows) - 1))
+        tbl.setStyle(TableStyle([
+            ('GRID', (0, 0), (-1, -1), 0.75, colors.black),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTNAME', (0, 1), (0, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 11),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('ALIGN', (2, 0), (2, -1), 'CENTER'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 6),
+        ]))
+        elements.append(tbl)
+
+        if b.get('return_html'):
+            elements.append(Spacer(1, 0.18*inch))
+            elements.append(Paragraph(
+                self.make_urls_blue(self.clean_text(b['return_html'])),
+                self.body_text_large))
+
+        return [self.create_box(b.get('header', 'Official Ballot'), elements, width)]
+
+    def create_ballot_reminder(self):
+        """A tasteful, centered 'please vote' reminder page (precedes the ballot)"""
+        el = self.config.get('election') or self.data.get('election', {})
+        if not (el.get('reminder_title') or el.get('reminder_html')):
+            return []
+
+        story = [Spacer(1, 2.3*inch)]
+        title_style = ParagraphStyle('BallotReminderTitle', parent=self.centered_bold,
+                                     fontSize=26, leading=32,
+                                     textColor=colors.HexColor('#8B0000'))
+        body_style = ParagraphStyle('BallotReminderBody', parent=self.centered_normal,
+                                    fontSize=13, leading=20,
+                                    alignment=TA_JUSTIFY,
+                                    textColor=colors.HexColor('#00008B'))
+
+        if el.get('reminder_title'):
+            story.append(Paragraph(f"<b>{el['reminder_title']}</b>", title_style))
+            story.append(Spacer(1, 0.12*inch))
+            # thin decorative rule under the heading
+            rule = Table([['']], colWidths=[2.2*inch], rowHeights=[1])
+            rule.setStyle(TableStyle([('LINEBELOW', (0, 0), (-1, -1), 1.2,
+                                       colors.HexColor('#8B0000'))]))
+            rule.hAlign = 'CENTER'
+            story.append(rule)
+            story.append(Spacer(1, 0.3*inch))
+
+        if el.get('reminder_html'):
+            para = Paragraph(self.make_urls_blue(self.clean_text(el['reminder_html'])),
+                             body_style)
+            block = Table([[para]], colWidths=[6.0*inch])
+            block.setStyle(TableStyle([
+                ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                ('TOPPADDING', (0, 0), (-1, -1), 0),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+            ]))
+            block.hAlign = 'CENTER'
+            story.append(block)
+
+        return story
+
     def create_event_sections(self):
         """Create event sections from JSON"""
         story = []
@@ -719,26 +965,38 @@ class NewsletterGenerator:
             story.append(self.create_box(re.get('header', 'Regular Events'), 
                                         self.make_urls_blue(text), width, self.body_text_left))
         
-        # Wednesday Lunchers
+        # Wednesday Lunchers (ContinuableBox for cross-page splitting)
         if 'wednesday_lunchers' in sections:
             wl = sections['wednesday_lunchers']
             text = self.clean_text(wl.get('content', ''))
-            # Add minimal spacing before each schedule line
-            lines = text.split('\n')
-            processed_lines = []
             months = ['January', 'February', 'March', 'April', 'May', 'June',
                      'July', 'August', 'September', 'October', 'November', 'December']
-            for i, line in enumerate(lines):
-                # Check if line starts with a month name
-                if i > 0 and any(line.strip().startswith(month) for month in months):
-                    # Add very small spacing using font size 1
-                    processed_lines.append('<font size="1">&nbsp;</font>')
-                processed_lines.append(line)
-            text = '<br/>'.join(processed_lines)
-            story.append(self.create_box(wl.get('header', 'Wednesday Lunchers'),
-                                        text, width, self.body_text_left))
-        
-        story.append(PageBreak())
+
+            # Split intro from restaurant entries on double newline
+            parts = text.split('\n\n', 1)
+            content_elements = []
+
+            # Intro paragraph
+            if parts:
+                intro = parts[0].replace('\n', '<br/>')
+                intro = self.make_urls_blue(intro)
+                content_elements.append(Paragraph(intro, self.body_text_left))
+                content_elements.append(Spacer(1, 0.05*inch))
+
+            # Individual restaurant entries as separate Paragraphs
+            if len(parts) > 1:
+                entry_lines = parts[1].split('\n')
+                for line in entry_lines:
+                    if line.strip():
+                        # Add small spacing before month-starting lines
+                        if any(line.strip().startswith(month) for month in months):
+                            content_elements.append(Spacer(1, 0.02*inch))
+                        line_html = self.make_urls_blue(line)
+                        content_elements.append(Paragraph(line_html, self.body_text_left))
+
+            story.append(self.create_minutes_box(
+                wl.get('header', 'Wednesday Lunchers'),
+                content_elements, width))
         
         # Happy Hour
         if 'happy_hour' in sections:
@@ -751,9 +1009,16 @@ class NewsletterGenerator:
         if 'panama_city' in sections:
             pc = sections['panama_city']
             text = self.clean_text(pc.get('content', '')).replace('\n', '<br/>')
-            story.append(self.create_box(pc.get('header', 'Panama City Events'), 
+            story.append(self.create_box(pc.get('header', 'Panama City Events'),
                                         self.make_urls_blue(text), width, self.body_text_left))
-        
+
+        # Spring Fling
+        if 'spring_fling' in sections:
+            sf = sections['spring_fling']
+            text = self.clean_text(sf.get('content', '')).replace('\n', '<br/>')
+            story.append(self.create_box(sf.get('header', 'Spring Fling Picnic'),
+                                        self.make_urls_blue(text), width, self.body_text_left))
+
         # Pensacola
         if 'pensacola' in sections:
             pe = sections['pensacola']
@@ -1027,8 +1292,18 @@ class NewsletterGenerator:
                     week_row.append(Paragraph(cell_text, self.cal_event_style))
             cal_data.append(week_row)
         
-        # Calendar table with increased row height to fit 2 full events
-        cal_table = Table(cal_data, colWidths=col_widths, rowHeights=[1.27*inch]*len(cal_data))
+        # Calendar table: keep a uniform 1.27" minimum row height, but let any
+        # row grow to fit its tallest cell (e.g., a day with two full events).
+        row_heights = []
+        for r, week_row in enumerate(cal_data):
+            max_h = 0
+            for c, cell in enumerate(week_row):
+                if isinstance(cell, Paragraph):
+                    _, h = cell.wrap(col_widths[c] - 5, 10*inch)
+                    if h > max_h:
+                        max_h = h
+            row_heights.append(max(1.27*inch, max_h + 6))
+        cal_table = Table(cal_data, colWidths=col_widths, rowHeights=row_heights)
         
         # Style - negative top padding shifts content up
         styles = [
@@ -1110,7 +1385,13 @@ class NewsletterGenerator:
         
         # RC Columns
         story.extend(self.create_rc_columns())
-        
+
+        # General Articles (e.g., Theodore Talk)
+        general = self.create_general_articles()
+        if general:
+            story.append(PageBreak())
+            story.extend(general)
+
         # WeeM Flyer
         weem = self.create_weem_flyer()
         if weem:
@@ -1121,27 +1402,147 @@ class NewsletterGenerator:
         
         # Event sections
         story.extend(self.create_event_sections())
-        
-        # Event Summary
+
+        # Event Summary (placed before Mensa Moments so puzzle + calendars are final pages)
         summary = self.create_event_summary()
         if summary:
             story.append(PageBreak())
             story.append(summary)
-        
-        story.append(PageBreak())
+
+        # Blank filler page (conditional - for even page count)
+        if self.config.get('include_blank_page', False):
+            story.append(PageBreak())
+            story.append(Spacer(1, 0.5*inch))
+
+            # Brain teasers - pull from JSON ('mensa_moments') if present, else default
+            mm = self.data.get('mensa_moments', {})
+            teaser_text = mm.get('teaser_html') or (
+                '<b>Mensa Moments</b><br/>'
+                '<i>Four brain teasers, because a blank page would be a terrible thing to waste.</i><br/><br/>'
+                '<b>1.</b> MEGACHIROPTERAN is a 15-letter word in Merriam-Webster. '
+                'Rearrange all 15 letters to spell another English word.<br/><br/>'
+                '<b>2.</b> Rearrange all 11 letters of MOUNTAINEER to spell another '
+                'English word.<br/><br/>'
+                '<b>3.</b> True or false: 11 &times; 11 = 121 in every number base.'
+                '<br/><br/>'
+                '<b>4.</b> True or false: Every perfect square can be written as '
+                '"121" in some number base.<br/><br/>'
+                '<i>(some of these questions are based)</i>'
+            )
+            para = Paragraph(teaser_text, self.article_text)
+            teaser_table = Table([[para]], colWidths=[5.0*inch])
+            teaser_table.setStyle(TableStyle([
+                ('BOX', (0, 0), (-1, -1), 1, colors.black),
+                ('LEFTPADDING', (0, 0), (-1, -1), 10),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+                ('TOPPADDING', (0, 0), (-1, -1), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+            ]))
+            teaser_table.hAlign = 'CENTER'
+
+            # Upside-down answers near bottom
+            hint_style = ParagraphStyle('HintStyle', fontSize=7,
+                                        alignment=TA_CENTER, leading=9)
+            hint = Paragraph(mm.get('hint_html') or '<i>(Rotate page to read answers)</i>', hint_style)
+
+            answer_style = ParagraphStyle('AnswerStyle', fontSize=7,
+                                          alignment=TA_LEFT, leading=9)
+            answer_text = mm.get('answer_html') or (
+                '<b>1.</b> Cinematographer '
+                '<b>2.</b> Enumeration '
+                '<b>3.</b> True. In any base, "11" means the base plus one. '
+                'Squaring that gives the base squared, plus twice the base, plus one '
+                '-- and those coefficients, 1-2-1, are exactly the digits "121." '
+                'No carrying ever occurs. '
+                '<b>4.</b> True. Since 121 in base b always equals (b+1) squared, just pick base (n-1) '
+                'and n squared will be 121 in that base. For example, 25 = 121 in base 4, '
+                'and 100 = 121 in base 9.'
+            )
+            upside_down = UpsideDownText(answer_text, answer_style, maxWidth=4.8*inch)
+            answer_table = Table([[upside_down]], colWidths=[5.0*inch])
+            answer_table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 5),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 5),
+            ]))
+            answer_table.hAlign = 'CENTER'
+
+            # Size the middle gap so teasers sit at the top and answers near the
+            # bottom of a single page (keeps Mensa Moments to one page regardless
+            # of how long this issue's teasers/answers are).
+            avail_w = 5.0 * inch
+            # Usable height minus the SimpleDocTemplate frame's default 6pt
+            # top/bottom padding, with a small safety buffer.
+            frame_h = letter[1] - 1.25 * inch - 1.25 * inch - 12
+            _, teaser_h = teaser_table.wrap(avail_w, frame_h)
+            _, hint_h = hint.wrap(avail_w, frame_h)
+            _, ans_h = answer_table.wrap(avail_w, frame_h)
+            gap = frame_h - 0.5 * inch - teaser_h - hint_h - ans_h - 0.05 * inch - 6
+            if gap < 0.2 * inch:
+                gap = 0.2 * inch
+
+            story.append(teaser_table)
+            story.append(Spacer(1, gap))
+            story.append(hint)
+            story.append(Spacer(1, 0.05 * inch))
+            story.append(answer_table)
 
         # Calendar pages
         for month_info in self.config.get('calendar_months', []):
+            story.append(PageBreak())
             cal_elements = self.create_calendar(
                 month_info['year'],
                 month_info['month']
             )
             story.extend(cal_elements)
-            if month_info != self.config['calendar_months'][-1]:
+
+        # Election insert: long-form nomination notice on the 2nd-to-last page,
+        # with a red "reverse side" pointer on the last (back / mailing) page.
+        election = self.config.get('election') or self.data.get('election', {})
+
+        # Optional long-form election notice (used when there is no ballot yet)
+        if election.get('notice_html'):
+            story.append(PageBreak())
+            story.append(self.create_box(
+                election.get('notice_title', '2026 Election Notice'),
+                election['notice_html'],
+                width, self.body_text_large))
+
+        # Ballot reminder page (immediately before the bylaws + ballot)
+        reminder = self.create_ballot_reminder()
+        if reminder:
+            story.append(PageBreak())
+            story.extend(reminder)
+
+        # Deferred articles (e.g., the bylaws reprint that accompanies the ballot)
+        for article in self.data.get('articles', []):
+            if article.get('end_matter'):
                 story.append(PageBreak())
-        
+                story.append(self.build_article_box(article, 6.3*inch))
+
+        # The ballot itself
+        ballot = self.create_ballot()
+        if ballot:
+            story.append(PageBreak())
+            story.extend(ballot)
+
+        # Back / mailing panel
+        if election.get('back_page'):
+            story.append(PageBreak())
+            return_lines = election.get('return_address', '').split('<br/>')
+            red_lines = election['back_page'].split('<br/>')
+            story.append(MailingPanel(return_lines, red_lines, width=width))
+
         # Build PDF
-        doc.build(story, canvasmaker=PageNumCanvas)
+        header_text = (f"Pensa Mensa, {self.config['month_year']}, "
+                       f"Volume {self.config['volume']}, Issue {self.config['issue']}")
+        suppress_last = bool(self.config.get('election') or self.data.get('election'))
+        doc.build(story,
+                  canvasmaker=lambda *args, **kwargs: PageNumCanvas(
+                      *args, header_text=header_text,
+                      suppress_last_page=suppress_last,
+                      draft_watermark=bool(self.config.get('draft_watermark')),
+                      **kwargs))
         print(f"✅ Newsletter generated: {output_file}")
 
 def main():
